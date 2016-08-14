@@ -116,8 +116,8 @@ int main(int argc, char *argv[])
 
 		     /* Retrieve the file name from the request message*/
 		     char filename[256];
-		     memcpy(filename,&buffer[4],strlen(buffer)-4);
-		     filename[strlen(buffer)-4]='\0';
+		     memcpy(filename,&buffer[0],strlen(buffer));
+		     filename[strlen(buffer)]='\0';
 		     // printf("Filename : %s Filename Size : %d\n",filename,strlen(filename));
 
 		     /*open the file to read*/
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 		     		close(fd);
 		     		break;
 		     	}
-		     	n = write(client_sockfd,read_buffer,1023);
+		     	n = write(client_sockfd,read_buffer,n);					//write only those no. of bytes that you have read
 		     	sleep(1);
 		     	if (n < 0) {
 		     		error("ERROR writing to socket");
