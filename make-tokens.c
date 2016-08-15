@@ -53,10 +53,49 @@ void  main(void)
    
        //do whatever you want with the commands, here we just print them
 
-       for(i=0;tokens[i]!=NULL;i++){
-	 printf("found token %s\n", tokens[i]);
+  //      for(i=0;tokens[i]!=NULL;i++){
+	 // printf("found token %s\n", tokens[i]);
+  //      }
+      int token_size = sizeof(tokens) / sizeof(tokens[0]);
+       switch(tokens[0]){
+        case "cd":
+          if(token_size > 2){
+            //Error
+          }
+          else{
+            int status= chdir(tokens[1]);
+            if(status == -1){
+              //Error
+              cout<<"Error"<<endl;
+            }
+          }
+          break;
+
+        case "server": 
+
        }
-       
+
+        pid_t parent = getpid();
+        pid_t pid = fork();
+
+        if (pid == -1)
+        {
+          printf("Error,failed to fork\n");
+            // error, failed to fork()
+        } 
+        else if (pid > 0)
+        {
+            int status;
+            waitpid(pid, &status, 0);
+        }
+        else 
+        {
+            // we are the child
+              execve("a.out",NULL,NULL);
+            _exit(EXIT_FAILURE);   // exec never returns
+        }
+
+
        // Freeing the allocated memory	
        for(i=0;tokens[i]!=NULL;i++){
 	 free(tokens[i]);
