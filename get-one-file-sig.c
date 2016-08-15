@@ -5,8 +5,18 @@
 #include <netdb.h> 
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 
+int bytes_downloaded=0;
+
+
+void download_handler(int sig){
+
+    printf("Received SIGINT; downloaded %d  bytes so far.\n",bytes_downloaded);
+    exit(0);
+
+}
 void error(char *msg)                       
 {
     perror(msg);
@@ -15,6 +25,12 @@ void error(char *msg)
    
 int main(int argc, char *argv[])
 {
+    struct sigaction new_action;                        //use sigaction() instead of signal()
+    new_action.sa_handler=download_handler;
+    sigemptyset (&new_action.sa_mask);
+    new_action.sa_flags = 0;
+    sigaction(SIGINT,&new_action,NULL);
+
     if (argc < 5) {                     //check if user aruguments are correct
        fprintf(stderr,"usage %s filename hostname port mode ", argv[0]);
        exit(0);
@@ -80,11 +96,13 @@ int main(int argc, char *argv[])
         char read_buffer[1024];
         /* read reply from server */
         while(1){
+            sleep(5);
             n = read(sockfd,read_buffer,1023);
             if (n < 0) {
                  error("ERROR reading from socket");
                  break;
             }
+            bytes_downloaded+=n;
             if(n==0){                           
                 // printf("File read completely \n");
                 break;
