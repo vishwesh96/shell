@@ -1,4 +1,2 @@
-!*.c
-.tgz
-.pdf
-*.out
+/bin
+/files
