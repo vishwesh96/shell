@@ -8,7 +8,7 @@
 #define MAX_TOKEN_SIZE 64
 #define MAX_NUM_TOKENS 64
 
-char **tokenize(char *line)
+char **tokenize(char *line, int &token_size)
 {
   char **tokens = (char **)malloc(MAX_NUM_TOKENS * sizeof(char *));
   char *token = (char *)malloc(MAX_TOKEN_SIZE * sizeof(char));
@@ -32,8 +32,26 @@ char **tokenize(char *line)
  
   free(token);
   tokens[tokenNo] = NULL ;
+  token_size = tokenNo;
   return tokens;
 }
+
+
+void cd(char **tokens,int token_size){
+  if(token_size > 2){
+    printf("Arguments more than expected. cd Takes only one arrgument\n");
+  }
+  else{
+    int status = chdir(tokens[1]);
+    if(status == -1){
+      // 
+      printf("Error. No such file or directory");
+    }
+  }
+}
+
+
+
 
 
 void  main(void)
@@ -41,6 +59,7 @@ void  main(void)
      char  line[MAX_INPUT_SIZE];            
      char  **tokens;              
      int i;
+     int token_size;
 
      while (1) {           
        
@@ -49,51 +68,35 @@ void  main(void)
        gets(line);           
        printf("Got command %s\n", line);
        line[strlen(line)] = '\n'; //terminate with new line
-       tokens = tokenize(line);
+       tokens = tokenize(line,token_size);
    
-       //do whatever you want with the commands, here we just print them
-
-  //      for(i=0;tokens[i]!=NULL;i++){
-	 // printf("found token %s\n", tokens[i]);
-  //      }
-      int token_size = sizeof(tokens) / sizeof(tokens[0]);
-       switch(tokens[0]){
-        case "cd":
-          if(token_size > 2){
-            //Error
-          }
-          else{
-            int status= chdir(tokens[1]);
-            if(status == -1){
-              //Error
-              cout<<"Error"<<endl;
-            }
-          }
-          break;
-
-        case "server": 
-
-       }
-
-        pid_t parent = getpid();
-        pid_t pid = fork();
-
-        if (pid == -1)
-        {
-          printf("Error,failed to fork\n");
-            // error, failed to fork()
-        } 
-        else if (pid > 0)
-        {
-            int status;
-            waitpid(pid, &status, 0);
+        if(strcmp(tokens[0],"cd") == 0){
+          cd(tokens,token_size);
         }
-        else 
-        {
-            // we are the child
-              execve("a.out",NULL,NULL);
-            _exit(EXIT_FAILURE);   // exec never returns
-        }
+
+        
+        
+
+
+        // pid_t parent = getpid();
+        // pid_t pid = fork();
+
+        // if (pid == -1)
+        // {
+        //   printf("Error,failed to fork\n");
+        //     // error, failed to fork()
+        // } 
+        // else if (pid > 0)
+        // {
+        //     int status;
+        //     waitpid(pid, &status, 0);
+        // }
+        // else 
+        // {
+        //     // we are the child
+        //       execve("a.out",NULL,NULL);
+        //     _exit(EXIT_FAILURE);   // exec never returns
+        // }
 
 
        // Freeing the allocated memory	

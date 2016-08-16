@@ -1,4 +1,4 @@
 !*.c
 .tgz
 .pdf
-.out
+*.out
