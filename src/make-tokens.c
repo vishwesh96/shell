@@ -1,9 +1,14 @@
 #include  <stdio.h>
 #include  <sys/types.h>
-#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h> 
+#include <fcntl.h>
 #include <unistd.h>
+#include <signal.h>
 
+#include <stdlib.h>
+
+//"							//commented quotes
 #define MAX_INPUT_SIZE 1024
 #define MAX_TOKEN_SIZE 64
 #define MAX_NUM_TOKENS 64
@@ -14,6 +19,21 @@ char *server_port = NULL;
 void error(char *msg)
 {
     perror(msg);
+}
+
+
+void child_handler(int sig){
+	int *status;
+	int pid = waitpid(-1,status,WNOHANG);
+	if(pid<0){
+		error("Error in waitpid ");
+	}
+	else if(pid==0){
+		printf("Child  not yet terminated\n");
+	}
+	else
+    printf("Reaping child : %d\n",pid);
+
 }
 
 char **tokenize(char *line, int *token_size)
@@ -67,6 +87,9 @@ void cd(char **tokens,int token_size){
     if(status == -1){
       error("Error"); 
     }
+    else{
+    	printf("In directory : %s\n",tokens[1]);
+    }
   }
 }
 
@@ -87,12 +110,19 @@ void getfl(char **tokens,int token_size,char *mode){
       else if (pid > 0)
       {
           int status;
-          wait(&status);
+          if(waitpid(pid,&status,0)<0){
+          	error("Child already reaped  by handler\n");
+          }
+          else{
+          	printf("Child reaped, in function\n");
+          }
       }
       else 
       {      
-        execl("get-one-file-sig",tokens[1],server_ip,server_port,mode,(char*)NULL);
-        _exit(EXIT_FAILURE);   // exec never returns
+        if(execl("get-one-file-sig","get-one-file-sig",tokens[1],server_ip,server_port,mode,(char*)NULL)<0){
+        	error("Error in exec ");
+        	exit(1);  // exec never returns
+        }
       }
     }
 
@@ -110,21 +140,30 @@ void getfl(char **tokens,int token_size,char *mode){
           if (pid == -1) error("Error in fork ");
           else if (pid > 0)
           {
-              int status;
-              wait(&status);
+	          int status;
+	          if(waitpid(pid,&status,0)<0){
+	          	error("Child already reaped  by handler\n");
+	          }
+	          else{
+	          	printf("Child reaped, in function\n");
+	          }
+
+
           }
           else 
           {      
             close(1);
-            open(tokens[3],O_WRONLY);
-            execl("get-one-file-sig",tokens[1],server_ip,server_port,mode,(char*)NULL);
-            _exit(EXIT_FAILURE);   // exec never returns
-          }
+            open(tokens[3],O_RDONLY);
+            if(execl("get-one-file-sig","get-one-file-sig",tokens[1],server_ip,server_port,mode,(char*)NULL)<0){
+		    	error("Error in exec ");
+		    	exit(1);  // exec never returns    
+	        }
+          }	
         }
       }
 
       // For single file download with piping.
-      else if(strcmp(tokens[2],"|") == 0){
+    else if(strcmp(tokens[2],"|") == 0){
         // Error handling. Less arguments.
         if(tokens[3] == NULL){
           printf("Error : Illegal command format\n");
@@ -136,18 +175,52 @@ void getfl(char **tokens,int token_size,char *mode){
           if (pid == -1) error("Error in fork ");
           else if (pid > 0)
           {
-              int status;
-              wait(&status);
+	          int status;
+	          if(waitpid(pid,&status,0)<0){
+	          	error("Child already reaped  by handler\n");
+	          }
+	          else{
+	          	printf("Child reaped, in function\n");
+	          }
+
           }
           else 
           { 
-            // Dup     
-            close(1);
-            open(tokens[3],O_WRONLY);
-            execl("get-one-file-sig",tokens[1],server_ip,server_port,mode,(char*)NULL);
-            _exit(EXIT_FAILURE);   // exec never returns
+            int p[2];
+            if( pipe(p)<0)
+            {
+                fprintf(stderr, "Pipe Initiation Error");
+                return;
+            }
+            //writer process
+
+            if(fork()==0)
+            { 
+              close(1);
+              dup(p[1]);
+              close(p[0]);
+              close(p[1]);
+              execl("get-one-file-sig","get-one-file-sig",tokens[1],server_ip,server_port,mode,(char*)NULL);
+              
+            }
+            //reader process
+            if(fork()==0)
+            { 
+              close(0);
+              dup(p[0]);
+              close(p[0]);
+              close(p[1]);
+              execv(strcat("../bin/",tokens[3]), tokens+3);
+              
+            }
+            close(p[0]);
+            close(p[1]);
+            wait(NULL);
+            wait(NULL);
           }
         }
+
+      
 
       }
       else{
@@ -164,14 +237,14 @@ void getbg(char **tokens,int token_size,char *mode){
     if (pid == -1) error("Error in fork ");
     else if (pid > 0)
     {
-        int status;
-        // wait(&status);
-        // print status
+    	;
     }
     else 
     { 
-      execl("get-one-file-sig",tokens[1],server_ip,server_port,mode,(char*)NULL);
-      _exit(EXIT_FAILURE);   // exec never returns
+	    if(execl("get-one-file-sig","get-one-file-sig",tokens[1],server_ip,server_port,mode,(char*)NULL)<0){
+	    	error("Error in exec ");
+	    	exit(1);  // exec never returns
+	  	}
     }
   }
   else{
@@ -183,7 +256,7 @@ void getbg(char **tokens,int token_size,char *mode){
 
 
 void getsq(char **tokens,int token_size){
-  char *args[MAX_TOKEN_SIZE] = (char *)malloc(2*MAX_TOKEN_SIZE+sizeof(char *));
+  char **args = malloc(2 * sizeof *args + (2 * (MAX_TOKEN_SIZE * sizeof **args)));
   strcpy(args[0],"getfl");
   if(token_size == 1){
     printf("Error : Too few arguments\n");
@@ -202,7 +275,7 @@ void getsq(char **tokens,int token_size){
 
 
 void getpl(char **tokens,int token_size){
-  char *args[MAX_TOKEN_SIZE] = (char **)malloc(2*sizeof(char *));
+  char **args = malloc(2 * sizeof *args + (2 * (MAX_TOKEN_SIZE * sizeof **args)));
   strcpy(args[0],"getfl");
   if(token_size == 1){
     printf("Error : Too few arguments\n");
@@ -214,8 +287,13 @@ void getpl(char **tokens,int token_size){
     if (pid == -1) error("Error in fork ");
     else if (pid > 0)
     {
-        int status;
-        wait(&status);
+          int status;
+          if(waitpid(pid,&status,0)<0){
+          	error("Child already reaped  by handler\n");
+          }
+          else{
+          	printf("Child reaped, in function\n");
+          }
     }
     else 
     { 
@@ -234,6 +312,16 @@ void getpl(char **tokens,int token_size){
 
 void  main(void)
 {
+
+	struct sigaction sa;
+	sa.sa_handler = child_handler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	if (sigaction(SIGCHLD, &sa, 0) == -1) {
+	  error("Error in sigaction ");
+	  exit(1);
+	}
+
      char  line[MAX_INPUT_SIZE];            
      char  **tokens;              
      int i;
@@ -291,7 +379,7 @@ void  main(void)
 // if( pipe(p)<0)
 //       {
 //           fprintf(stderr, "Pipe Initiation Error");
-//           return;
+//           return;x`
 //       }
 //       //writer process
 

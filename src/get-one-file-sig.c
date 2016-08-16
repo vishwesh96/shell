@@ -96,7 +96,6 @@ int main(int argc, char *argv[])
         char read_buffer[1024];
         /* read reply from server */
         while(1){
-            sleep(5);
             n = read(sockfd,read_buffer,1023);
             if (n < 0) {
                  error("ERROR reading from socket");
