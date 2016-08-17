@@ -7,9 +7,6 @@
 #include <signal.h>
 #include <unordered_set>
 #include <stdlib.h>
-#include <sys/wait.h>
-#include <cstdlib>
-#include <sys/signal.h>
 
 //"							//commented quotes
 #define MAX_INPUT_SIZE 1024
@@ -55,7 +52,7 @@ void handler(int sig){
 		printf("SIGINT received in shell process");				//dont close the shell on SIGINT
 	}
 	else if (sig==SIGTERM){
-		printf("Ignore SIGTERM in shell process");			//ignore SIGTERM when exit is called
+		printf("Ignore SIGTERM in shell process")			//ignore SIGTERM when exit is called
 
 		while(1){
 	    	int m=waitpid(-1,&status,WNOHANG);

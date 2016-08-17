@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
     sigemptyset (&new_action.sa_mask);
     new_action.sa_flags = 0;
     sigaction(SIGINT,&new_action,NULL);
+    sigaction(SIGTERM,&new_action,NULL);
 
     if (argc < 5) {                     //check if user aruguments are correct
        fprintf(stderr,"usage %s filename hostname port mode ", argv[0]);
