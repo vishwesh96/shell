@@ -11,7 +11,6 @@
 #include <stdlib.h>
 
 
-
 void error(char *msg)
 {
     perror(msg);
@@ -145,7 +144,7 @@ int main(int argc, char *argv[])
 		     		break;
 		     	}
 		     	n = write(client_sockfd,read_buffer,n);					//write only those no. of bytes that you have read
-		     	// sleep(1);
+		     	sleep(1);
 		     	if (n < 0) {
 		     		error("ERROR writing to socket");
 		     		close(client_sockfd);
